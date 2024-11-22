@@ -4,30 +4,53 @@ dotenv.config();
 
 const api_key = process.env.API_KEY;
 
-const getCoordinates = async (city) => {
+const getCoordinates = (city, callback) => {
   const url = `http://api.openweathermap.org/geo/1.0/direct?q=${city}&appid=${api_key}`;
-  const res = await fetch(url);
-  if (res.ok) {
-    const data = await res.json();
-    // console.log(data);
-    return {
-      latitude: data[0].lat,
-      longitude: data[0].lon,
-    };
+
+  fetch(url)
+    .then((res) => res.json())
+    .then((data) => {
+      if (data && data.length > 0) {
+        callback(null, {
+          latitude: data[0].lat,
+          longitude: data[0].lon,
+        });
+      } else {
+        callback("No coordinates found", null);
+      }
+    })
+    .catch((err) => {
+      callback(err, null);
+    });
+};
+
+const getForecast = (city, callback) => {
+  getCoordinates(city, (err, coordinates) => {
+    if (err) {
+      return callback(err, null);
+    }
+
+    const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coordinates.latitude}&lon=${coordinates.longitude}&units=imperial&appid=${api_key}`;
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) {
+          callback(null, data);
+        } else {
+          callback("No weather data found", null);
+        }
+      })
+      .catch((err) => {
+        callback(err, null);
+      });
+  });
+};
+
+getForecast("Craiova", (err, data) => {
+  if (err) {
+    console.error("Error:", err);
   } else {
-    console.log(res.status);
+    console.log("Weather Data:", data);
   }
-};
-
-const getForecast = async (city) => {
-  const coordinates = await getCoordinates(city);
-  // console.log(coordinates.latitude, coordinates.longitude);
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coordinates.latitude}&lon=${coordinates.longitude}&units=imperial&appid=${api_key}`;
-  const res = await fetch(url);
-  if (res.ok) {
-    const data = await res.json();
-    console.log(data);
-  }
-};
-
-getForecast("Craiova");
+});
