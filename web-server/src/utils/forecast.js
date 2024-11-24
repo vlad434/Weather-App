@@ -3,10 +3,10 @@ import fetch from "node-fetch";
 
 dotenv.config();
 
-const api_key = process.env.API_KEY;
+const api_key = "412a55b3385e2afd26fd24523d1fff2e";
 
-export const forecast = (latitude, longitude) => {
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=imperial&appid=${api_key}`;
+export const forecast = (latitude, longitude, callback) => {
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${api_key}`;
 
   fetch(url)
     .then((res) => res.json())
@@ -18,9 +18,9 @@ export const forecast = (latitude, longitude) => {
             "." +
             " It is currently " +
             data.main.temp +
-            " degress out. It feels like " +
+            "°C degress out. It feels like " +
             data.main.feels_like +
-            " degrees."
+            "°C."
         );
       } else {
         callback("No weather data found", null);

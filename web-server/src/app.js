@@ -1,6 +1,12 @@
-const path = require("path");
-const express = require("express");
-const hbs = require("hbs");
+import path from "path";
+import { fileURLToPath } from "url";
+import express from "express";
+import hbs from "hbs";
+import { geocode } from "./utils/geocode.js";
+import { forecast } from "./utils/forecast.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -40,9 +46,46 @@ app.get("/help", (req, res) => {
 });
 
 app.get("/weather", (req, res) => {
+  if (!req.query.address) {
+    return res.send({
+      error: "No address provided",
+    });
+  }
+
+  geocode(req.query.address, (err, data) => {
+    if (err) {
+      return res.send({ error: "No address provided" });
+    }
+
+    geocode(req.query.address, (err, data) => {
+      if (err) {
+        return res.send({ error: err });
+      }
+      forecast(data.latitude, data.longitude, (forecastErr, forecastData) => {
+        if (forecastErr) {
+          return res.send({ error: forecastErr });
+        }
+
+        res.send({
+          forecast: forecastData,
+          location: data.location,
+          address: req.query.address,
+        });
+      });
+    });
+  });
+});
+
+app.get("/products", (req, res) => {
+  if (!req.query.search) {
+    return res.send({
+      error: "You must provide a search term",
+    });
+  }
+  console.log(req.query.search);
+
   res.send({
-    forecast: "",
-    location: "",
+    products: [],
   });
 });
 
