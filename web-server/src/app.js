@@ -4,6 +4,7 @@ import express from "express";
 import hbs from "hbs";
 import { geocode } from "./utils/geocode.js";
 import { forecast } from "./utils/forecast.js";
+import { getCities } from "./utils/cities.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,11 +32,20 @@ app.get("", (req, res) => {
   });
 });
 
-app.get("/about", (req, res) => {
-  res.render("about", {
-    title: "About",
-    name: "Vladone",
-  });
+app.get("/cities", async (req, res) => {
+  try {
+    const cities = await getCities();
+    res.render("cities", {
+      cities,
+      title: "Cities",
+      name: "Vladone",
+    });
+  } catch (err) {
+    console.error("Error fetching cities:", err);
+    res.status(500).send({
+      error: "Unable to fetch cities data",
+    });
+  }
 });
 
 app.get("/help", (req, res) => {
@@ -55,38 +65,19 @@ app.get("/weather", (req, res) => {
 
   geocode(req.query.address, (err, data) => {
     if (err) {
-      return res.send({ error: "No address provided" });
+      return res.send({ error: err });
     }
-
-    geocode(req.query.address, (err, data) => {
-      if (err) {
-        return res.send({ error: err });
+    forecast(data.latitude, data.longitude, (forecastErr, forecastData) => {
+      if (forecastErr) {
+        return res.send({ error: forecastErr });
       }
-      forecast(data.latitude, data.longitude, (forecastErr, forecastData) => {
-        if (forecastErr) {
-          return res.send({ error: forecastErr });
-        }
 
-        res.send({
-          forecast: forecastData,
-          location: data.location,
-          address: req.query.address,
-        });
+      res.send({
+        forecast: forecastData,
+        location: data.location,
+        address: req.query.address,
       });
     });
-  });
-});
-
-app.get("/products", (req, res) => {
-  if (!req.query.search) {
-    return res.send({
-      error: "You must provide a search term",
-    });
-  }
-  console.log(req.query.search);
-
-  res.send({
-    products: [],
   });
 });
 
